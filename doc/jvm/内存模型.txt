@@ -1,0 +1,40 @@
+1. 基本原理
+	1）堆内存（主要GC内存，包括年轻区，老年区）
+		1>年轻区
+			1.包括一个Eden区跟两个Survivor区（From Survivor，To Survivor），默认比例为8:1:1
+			2.绝大多数刚创建的对象会被分配到Eden区，其中大部分对象很快就会消亡，Eden区是连续的内存空间
+			3.JVM会频繁的对年轻区进行GC，这种GC叫做Minor GC，一般使用“停止-复制”算法
+			4.GC时，JVM会将消亡的对象清理掉，把存活下来的对象复制到From Survivor区，To Survivor为空白，Eden区也是空白
+			5.如果一次回收中，Survivor+Eden中存活下来的内存超过了10%，则需要将一部分对象分配到 老年代
+			6.经过几次Minor GC后，From Survivor满了，JVM会把其中仍存活的对象复制到To Survivor
+			7.From Survivor区角色变为To Survivor区，To Survivor区角色变为From Survivor区
+			8.之后在进行Minor GC时，JVM会把存活的对象添加到From Survivor区，直到From Survivor区满了，再重复4、5、6、7步
+			9.当对象在From Survivor跟To Survivor区切换一定次数后（默认是大于15次）仍然存活下来，它们将被复制到老年区
+		2>老年区
+			1.在年轻区存活足够长时间且没有被清除掉的对象会被复制到老年区，老年区一般比年轻区大
+			2.如果是大对象，年轻区容纳不下，则会直接将它分配到老年区
+			3.老年代内存不足时，JVM会对其进行GC，这种GC叫Major GC，也叫Full GC，这种GC比Minor GC要慢，一般采用“标记-整理”算法，标记出仍存活的对象，并将其移向一端，以保证内存连续
+			4.老年区的对象可能引用到年轻代的对象，老年区会维护一块512Byte的Card Table，它保存老年区对象对年轻区对象的引用
+			
+	2）方法区内存（也称永久区）
+		1.永久代的回收有两种：常量池中的常量，无用的类信息，常量的回收很简单，没有引用了就可以被回收。对于无用的类进行回收，必须保证3点：
+			1）类的所有实例都已经被回收
+			2）加载类的ClassLoader已经被回收
+			3）类对象的Class对象没有被引用（即没有通过反射引用该类的地方）
+		2.永久代的回收并不是必须的，可以通过参数来设置是否对类进行回收
+2. Minor GC 跟 Major GC的关系
+	1）Minor GC，一般Eden区满时会发生，Eden区不满也会发生，频率比较高，速度快
+	2）每次Minor GC每次都会检查能够进入老年区的对象的大小是否大于老年区的剩余内存空间，如果大于则会直接触发一次Major GC
+	3）否则就看是否设置了允许担保失败(-XX:+HandlePromotionFailure)，如果允许则只会进行Minor GC，此时允许内存分配失败
+	4）如果不允许，则会进行Minor GC,同时仍然进行Major GC，不管老年区是否有多少的空间
+	5）一次Major GC一般会伴随一次或者多次Minor GC，因为老年区的对象可能存在对年轻区对象的引用
+
+3. 垃圾收集器
+	1>年轻区
+		1）串行（Serial），最简单的收集器，只有一个线程负责GC，GC时会停止整个程序，即Stop-The-World
+		2）
+		3）并行清除（Parallel Scavenge），多线程GC，仍然会Stop-The-World，相对串行，停止时间相对比较短
+	2>老年区
+		1）
+		2）
+		3）

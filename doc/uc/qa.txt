@@ -1,0 +1,185 @@
+1. synchronized和java.util.concurrent.locks.Lock的区别
+	java.util.concurrent.locks.Lock实现synchronized所有的同步功能;
+	java.util.concurrent.locks.Lock有比synchronized更精确的锁控制和更高的性能
+	synchronized的锁会由JVM释放，java.util.concurrent.locks.Lock则需要程序员手动释放
+	
+	synchronized基于对象锁
+		所有对象都自动含有单一的锁，JVM会记录一个对象被加锁的次数，对象被解锁时计数为0，当线程A给对象A加锁时，计数为1
+	此后A线程每次对A对象加锁时，计数都会递增，只有首先获得A对象的锁的线程才能继续往A对象加锁，每当任务离开是，计数伴随递减
+	当计数为0时，锁就被完全释放了。
+	
+	java.util.concurrent.locks.Lock不同于synchronized面向对象，它是基于栈中的框架而不是具体某个对象
+		java.util.concurrent.locks.Lock只需要在栈里面设置锁的开始及结束即可，不用关心框架的大小、对象的变化等，所以
+	java.util.concurrent.locks.Lock可以精确的控制锁
+	
+	
+	AbstractQueuedSynchronizer通过构造一个基于阻塞的CLH队列容纳所有的阻塞线程，而对该队列的操作均通过Lock-Free（CAS）操作，但对已经获得锁的线程而言，ReentrantLock实现了偏向锁的功能。
+
+	synchronized的底层也是一个基于CAS操作的等待队列，但JVM实现的更精细，把等待队列分为ContentionList和EntryList，目的是为了降低线程的出列速度；当然也实现了偏向锁，从数据结构来说二者设计没有本质区别。但synchronized还实现了自旋锁，并针对不同的系统和硬件体系进行了优化，而Lock则完全依靠系统阻塞挂起等待线程
+	
+
+2. Spring 事务
+	1）隔离级别
+		TransactionDefinition.ISOLATION_DEFAULT 默认隔离级别，表示使用数据库的默认隔离级别，一般是ISOLATION_READ_COMMITED
+		TransactionDefinition.ISOLATION_READ_UNCOMMITED 未提交读，表示一个事务可以读取另一个事务修改而未提交的数据，该级别会出现脏读、不可重复读以及幻读
+		TransactionDefinition.ISOLATION_READ_COMMITED 提交读，表示一个事务只能读取另一个事务已经提交的数据，该级别可以解决脏读问题
+		TransactionDefinition.ISOLATION_REPEATABLE_READ 可重复读，表示一个事务在整个过程中可以重复执行某个查询，并且每次查询返回的记录都相同，即使多次查询之间有新增的数据满足查询条件，这些新增大数据也会被忽略，该级别可以解决脏读、不可重复读问题
+		TransactionDefinition.ISOLATION_SERIALIZABLE 序列化，表示所有事务一次执行,这样事务之间互不影响，该级别可以解决脏读、不可重复读以及幻读问题
+	2）传播特性
+		TransactionDefinition.PROPAGATION_REQUIRED 表示如果当前上下文存在一个事务，则用当前事务运行，否则新建一个事务再运行
+		TransactionDefinition.PROPAGATION_REQUIRED_NEW 表示无论当前上下文有无事务都新建一个事务运行，如果当前上下文有事务则将其挂起
+		TransactionDefinition.PROPAGATION_SUPPORTS 表示当前上下文有事务，则加入该事务运行，否则以非事务方式运行
+		TransactionDefinition.PROPAGATION_NOT_SUPPORTED 表示不支持事务，如果当前上下文有事务，则将当前事务挂起，以非事务方式运行
+		TransactionDefinition.PROPAGATION_NEVER 表示始终以无事务方式运行，如果当前上下文有事务，则抛异常
+		TransactionDefinition.PROPAGATION_MANDATORY 表示一定要以事务方式运行，如果当前上下文没有事务，则抛异常
+		TransactionDefinition.PROPAGATION_NESTED 表示如果当前上下文有事务，则新建一个事务作为当前事务的内嵌事务运行，否则等价于TransactionDefinition.PROPAGATION_REQUIRED
+		
+		注意：内嵌事务依赖外部事务，它不能单独提交，只能通过外部事务的提交来触发它的提交，跟JDBC的保存点（SavaPoint）类似
+	3）事务回滚
+		抛RuntimeException或其子类，回滚
+	4）分类
+		1>物理事务：数据库底层提供的事务支持，如JDBC\JTA等
+		2>逻辑事务：Spring管理的事务，不同于物理事务，逻辑事务提供更丰富的事务控制
+	5）方案
+		1>低级别：使用工具类（如：DataSourceUtils）控制事务或通过数据源代理（TransactionAwareDataSourceProxy）控制事务
+		2>高级别	：使用模板类，如：JdbcTemplate、HibernateTemplate等
+	6）重要组成
+		1>PlatformTransactionManager：用于管理事务，实现类有HibernateTransactionMananger等
+		2>TransactionDefinition：用于定义事务的属性，如隔离级别、传播特性等
+		3>TransactionStatus：用于定义事务的状态
+		
+3. AJAX跨域
+	1）在客户端注册一个callback, 然后把callback的名字传给服务器。
+	2）此时，服务器先生成 json数据。
+	3）以 javascript 语法的方式，生成一个function , function 名字就是传递上来的参数 jsonp.
+	4）最后将 json 数据直接以入参的方式，放置到 function 中，这样就生成了一段 js 语法的文档，返回给客户端。
+	5）客户端浏览器，解析script标签，并执行返回的 javascript 文档，此时数据作为参数，传入到了客户端预先定义好的 callback 函数里.（动态执行回调函数）		
+	
+4.concurrent
+	
+	
+	
+	
+5. oracle 分析函数
+	rollup: 跟group by 结合使用，如果是group by rollup(a, b, c), 则会先对a, b, c进行group by，然后对a, b进行group by，然后对a进行group by，最后对全表进行group by，每次group by均可以返回分组的小计
+	rollup(a,b)   统计列包含：(a,b)、(a)、()
+	rollup(a,b,c) 统计列包含：(a,b,c)、(a,b)、(a)、()
+	
+	cube：跟group by 结合时候，如果是group by cube(a, b, c)，则会先对a, b, c进行group by，然后依次是对a, b、a, c、a、b, c、b、c进行group by，每次group by均可以返回分组的小计
+	cube(a,b)     统计列包含：(a,b)、(a)、(b)、()
+	cube(a,b,c)   统计列包含：(a,b,c)、(a,b)、(a,c)、(b,c)、(a)、(b)、(c)、()
+	
+	grouping(字段名)：0表示该列为参与rollup汇总活动，1表示cube函数对应的列是由于cube函数所产生的空值对应的信息，即对此列进行汇总计算后的结果
+	grouping_id(字段名)：可以用来美化分组结果
+	
+	decode：条件判断，如decode(条件,值1,返回值1,值2,返回值2,...值n,返回值n,缺省值)
+	
+	row_number：函数返回一个唯一的值，当碰到相同数据时，排名按照记录集中记录的顺序依次递增。 
+	dense_rank：函数返回一个唯一的值，除非当碰到相同数据时，此时所有相同数据的排名都是一样的。 
+	rank：函数返回一个唯一的值，除非遇到相同的数据时，此时所有相同数据的排名是一样的，同时会在最后一条相同记录和下一条不同记录的排名之间空出排名。
+
+6. memcached
+	1）存储方式
+		键值对
+	2）内存结构
+		采用Slab Allocation的机制分配和管理内存，通过使用固定大小的内存块减少内存碎片
+		原理：
+			将分配的内存分割成各种大小的块（Chunk），并把大小相同的Chunk分成组（即Chunk的集合），Slab Allocation还有重复使用已分配的内存的目的
+		
+		术语
+		Page：分配给Slab的内存空间，默认是1M，分配给Slab之后根据Slab的大小切分成Chunk
+		Chunk：用于缓存记录的内存空间
+		Slab Class：特定大小的Chunk组
+		
+		插入原理：
+			数据会被插入到比自己大且最小未被使用或者过期的块中
+		插入流程：
+			
+	3）过期方式
+		LRU＋失效时间，不主动失效		
+		
+7. http协议
+	状态码
+		1字头：代表请求已经被接受，需要继续处理；这类响应是临时性的，只包含状态行和某些可选响应头信息并以空行结束
+		100（Continue）：客户端应当继续发送请求
+		101（Switching Protocols）：服务器理解客户端的请求，并通过Upgrade消息头通知客户端采用不同的协议来完成这个请求
+		102（Processing）：处理将继续执行
+		
+		2字头：代表客户端的请求被服务器接收、理解并接受
+		200（OK）：请求成功，将返回请求的数据
+		201（Created）：请求已经被实现，而且有一个新的资源已经依据请求的需要而建立，且它的URI已经随Location头信息返回
+		202（Accepted）：服务器已经接受请求，但尚未处理，异步操作时非常有用
+		203（Non-Authoritative Information）：服务器已经成功处理了请求，但返回的实体头部元信息不是在原始服务器上有效的确定集合，而是来自本地或者第三方的拷贝
+		204（No Content）：服务器已经成功处理请求，但不需要返回任何实体内容，并且希望返回更新了的元信息
+		205（Reset Content）：服务器已经成功处理请求，且没有返回任何内容，会重置文档视图（如重置表单）
+		206（Partial Content）：服务器成功处理了部分GET请求，多用于HTTP文件分段下载
+		207（Multi-Status）：代表之后的消息体是一个XML信息，并且可能依照之前子请求数量的不同，包含一系列独立的响应代码
+		
+		3字头：重定向，代表客户端需要进一步的操作才能完成请求，目标用Location指定
+		300（Multiple Choices）：请求的资源有一系列可供选择的回馈信息，每个都有自己特定的地址和浏览器驱动的商议信息，用户或者浏览器能够自行选择一个首选的地址进行重定向
+		301（Moved Permanently）：被请求的资源被永久移动到新的位置，并且将来任何对此资源的引用都应该使用本响应返回的若干个URI之一
+		302（Moved Temporarily）：请求的资源现在临时从不同的URI相应请求，客户端以后应当继续向原有的地址发送请求
+		303（See Other）：对应当前请求的响应可以在另一个URI被找到，而且客户端应该使用GET的方式访问那个资源
+		304（Not Modified）：如果客户端发送了一个带条件的GET请求且该请求已经被允许，而文档内容并没有改变
+		305（Use Proxy）：被请求的资源必须通过指定的代理才能被访问，Location指定代理所在的URI信息
+		306（Switch Proxy）：在最新的规范中不再使用该状态
+		307（Temporary Redirect）：请求的资源临时从不同的URI相应请求
+
+		4字头：请求错误，代表客户端看起来可能发生了错误，妨碍了服务器的处理
+		400（Bad Request）：语义有误，当前请求无法被服务器理解，请求参数有误
+		401（Unauthorized）：当前请求需要用户验证
+		402（Payment Required）：当前请求需要用户付款
+		403（Forbidden）：服务器已经理解请求，但是拒绝执行它，即使授权也拒绝
+		404（Not Found）：请求失败，请求的资源在服务器上没有发现
+		405（Method Not Allowed）：请求行中指定的请求方法不恩那个被用于请求响应的资源
+		406（Not Acceptable）：请求的资源的内容特性无法满足请求头中的条件，因而无法生成相应实体
+		407（Proxy Anthentication Required）：客户端必须在代理服务器上进行验证
+		408（Request Timeout）：请求超时
+		409（Conflict）：由于和被请求的资源的当前状态之间存在冲突，请求无法完成
+		410（Gone）：被请求的资源在服务器上已经不再可用，而且没有任何已知的转发地址
+		411（Length Required）：服务器拒绝在没有定义Content-Length头的情况下接受请求
+		412（Precondition Failed）：服务器在验证在请求的头字段中给出先决条件时，没有满足其中的一个或者多个
+		413（Request Entity Too Large）：服务器拒绝当前请求，因为该请求提交的实体数据大小超过了服务器能够处理的范围
+		414（Request-URI Too Long）：请求的URI长度超过了服务器能够解释的长度
+		415（Unsupported Media Type）：请求中提交的实体并不是服务器中所支持的格式
+		416（Requested Range Not Satisfiable）：如果请求中包含Range请求头，并且Range中指定的任何数据范围都与当前资源的可用范围不重合，同时请求头又没有定义If-Range请求头
+		417（Expectation Failed）：在请求头Expect中指定的预期内容无法被服务器满足
+		421（Too Many Connection From Your Internet Address）：从当前客户端所在的IP地址到服务器的连接超过服务器许可的最大范围
+		422（Unprocessable Entity）：请求格式正确，但由于含有语义错误，无法响应
+		423（Locked）：当前资源被锁定
+		424（Failed Dependency）：由于之前某个请求发生的错误，导致当前请求失败
+		
+		
+		5字头：代表服务器在处理请求的过程中出现错误或者异常，也可能是服务器意识到当前软硬件资源无法完成对请求的处理
+		500（Interval Error）：服务器遇到了未曾预料的情况，导致它无法完成对请求的处理，一般是服务器端源代码出错
+		501（Not Implemented）：服务器不支持当前请求所需要的某个功能，如服务器无法识别请求的方法，并且无法支持其任何资源的请求
+		502（Bad Gateway）：作为网关或者代理工作的服务器尝试执行请求时，从上游服务器接收到无效的相应
+		503（Service Unavailable）：由于临时的服务器维护或者过载，导致服务器无法处理当前请求
+		504（Gateway Timeout）：作为网关或者代理服务器尝试执行请求时，未能及时从上游服务器收到响应
+		505（HTTP Version Not Supported）：不支持请求使用的HTTP版本
+		506（Variant Also Negotiate）：代表服务器内部配置错误
+		507（Insufficient Storage）：服务器无法存储完成请求所必须的内容
+		508（Loop Detected）：服务器发现请求出现一个无限循环
+		509（Band Width Limit Exceeded）：服务器达到带宽限制
+		510（Not Extended）：获取资源所需要的策略并没有没满足
+		
+		
+	请求过程
+		1）建立TCP/IP链接，客户端跟服务器端通过Socket，三次握手进行连接
+		2）客户端向服务端发送HTTP请求，如GET /index.html HTTP/1.1
+		3）客户端向服务端发送请求头信息、请求内容，最后会发送以空白行，表示请求完毕
+		4）服务端会做出应答，表示对客户端的应答，如HTTP/1.1 200 OK
+		5）服务端向客户端发送应答头信息，服务器端向客户端发送完应答头信息之后，也会发送一空白行，表示应答头信息发送完毕
+		6）以Content-type要求的数据格式发送数据给客户端
+		7）服务端关闭TCP/IP链接，如果服务端或者客户端增加了Connetion:keep-alive就表示客户端与服务端继续保持连接，下次请求即可复用该链接
+		
+8. Myisam VS Innodb
+	Myisam 非事务安全，Innodb事务安全
+	Myisam锁粒度是表级，Innodb支持行锁
+	Myisam支持全文搜索，Innodb不支持
+	Myisam效率比Innodb要高
+	Myisam表是保存成文件的形式，跨平台迁移方便
+	Innodb表比Myisam表更安全，可以保证数据不丢失的情况下，切换非事务表到事务表
+	Innodb的自增长列必须加索引，且索引列只包含自增长列，Myisam则可以是多列
+	Myisam删除所有数据时，是先删表后建表，而Innodb则是一行一行的删
+	Myisam统计行数时不需要遍历全表，Innodb则需要

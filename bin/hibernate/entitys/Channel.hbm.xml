@@ -1,0 +1,26 @@
+<?xml version="1.0"?>
+<!DOCTYPE hibernate-mapping PUBLIC 
+	"-//Hibernate/Hibernate Mapping DTD 3.0//EN"
+	"http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+<hibernate-mapping package="hibernate.entitys">
+	<class name="Channel">
+		<cache usage="read-write"/>
+		<id name="id" column="CHANNEL_ID" type="long">
+			<generator class="native" />
+		</id>
+		<property name="name" column="CHANNEL_NAME" type="string" />
+		<property name="order" column="CHANNEL_ORDER" type="int" />
+		
+		<property name="createBy" column="CREATE_BY" type="long" />
+		<property name="createDate" column="CREATE_DATE" type="timestamp" />
+		<property name="lastModifiedBy" column="LAST_MODIFIED_BY" type="long" />
+		<property name="lastModifiedDate" column="LAST_MODIFIED_DATE" type="timestamp" />
+		
+		<many-to-one name="parent" column="CHANNEL_PARENT" />
+		<set name="childs" cascade="all">
+			<cache usage="read-write"/>
+			<key column="CHANNEL_PARENT" />
+			<one-to-many class="Channel"/>
+		</set>
+	</class>
+</hibernate-mapping>
