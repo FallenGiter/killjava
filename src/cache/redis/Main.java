@@ -11,8 +11,4 @@ public class Main {
 		jedis.set("callme", "maybe1");
 		System.out.println(jedis2.get("callme"));
 	}
-	
-	public static void main(String[] args) {
-		new Main();
-	}
 }
