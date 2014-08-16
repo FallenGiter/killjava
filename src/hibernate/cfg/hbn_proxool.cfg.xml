@@ -1,0 +1,31 @@
+<!DOCTYPE hibernate-configuration PUBLIC
+	"-//Hibernate/Hibernate Configuration DTD 3.0//EN"
+	"http://hibernate.sourceforge.net/hibernate-configuration-3.0.dtd">
+
+<hibernate-configuration>
+	<session-factory>
+		<property name="hibernate.dialect">org.hibernate.dialect.MySQLDialect</property>
+
+		<!-- Config Connection Pool Using Proxool Begin -->
+		<property name="connection.provider_class">org.hibernate.connection.ProxoolConnectionProvider</property>
+		<property name="proxool.pool_alias">Proxool_Pool</property> 
+		<property name="proxool.xml">hibernate/cfg/Proxool.xml</property> 
+		<property name ="hibernate.proxool.existing_pool">false</property>
+		<!-- Config Connection Pool Using Proxool End -->
+		
+		<!--property name="hibernate.hbm2ddl.auto">update</property-->
+		<property name="show_sql">true</property>
+		
+		<property name="hibernate.jdbc.batch_size">500</property>
+		
+		<!-- Config Second Level Cache Using EHCache Begin -->
+		<property name="hibernate.cache.use_second_level_cache">true</property>
+		<property name="hibernate.cache.use_query_cache">true</property>
+		<property name="hibernate.cache.use_structured_entries">true</property>
+		<property name="hibernate.cache.provider_class">org.hibernate.cache.EhCacheProvider</property>
+		<property name="hibernate.cache.region_prefix">hbn_cache</property>
+		<!-- Config Second Level Cache Using EHCache End -->
+		
+		<mapping resource="hibernate/entitys/Channel.hbm.xml" />
+	</session-factory>
+</hibernate-configuration>

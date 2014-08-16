@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+"http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="ibatis.mappers.ChannelMapper">
+	<resultMap type="ibatis.entitys.Channel" id="allChls">
+		<id column="CHANNEL_ID"/>
+		<result property="id" column="CHANNEL_ID"/>
+		<result property="name" column="CHANNEL_NAME"/>
+		<result property="order" column="CHANNEL_ORDER"/>
+		<result property="createBy" column="CREATE_BY"/>
+		<result property="createDate" column="CREATE_DATE"/>
+		<result property="lastModifiedBy" column="LAST_MODIFIED_BY"/>
+		<result property="lastModifiedDate" column="LAST_MODIFIED_DATE"/>
+		<association property="parent" column="CHANNEL_PARENT" javaType="ibatis.entitys.Channel" select="selectParent" />
+		<collection property="childs" column="CHANNEL_ID" ofType="ibatis.entitys.Channel" select="selectChilds" />
+	</resultMap>
+	
+	<select id="selAllChls" resultMap="allChls">
+		SELECT T.CHANNEL_ID, T.CHANNEL_NAME, T.CHANNEL_ORDER, T.CHANNEL_PARENT, T.CREATE_BY, T.CREATE_BY, T.CREATE_DATE, T.LAST_MODIFIED_BY, T.LAST_MODIFIED_DATE FROM CHANNEL T
+	</select>
+	
+	<select id="selectParent" resultMap="allChls">
+		SELECT T.CHANNEL_ID, T.CHANNEL_NAME, T.CHANNEL_ORDER, T.CHANNEL_PARENT, T.CREATE_BY, T.CREATE_BY, T.CREATE_DATE, T.LAST_MODIFIED_BY, T.LAST_MODIFIED_DATE FROM CHANNEL T WHERE T.CHANNEL_ID = #{channelId}
+	</select>
+	
+	<select id="selectChilds" resultMap="allChls">
+		SELECT T.CHANNEL_ID, T.CHANNEL_NAME, T.CHANNEL_ORDER, T.CHANNEL_PARENT, T.CREATE_BY, T.CREATE_BY, T.CREATE_DATE, T.LAST_MODIFIED_BY, T.LAST_MODIFIED_DATE FROM CHANNEL T WHERE T.CHANNEL_PARENT = #{parentId}
+	</select>
+</mapper>
